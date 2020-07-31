@@ -1,0 +1,60 @@
+#####################################
+#Commensal Neisseria Project
+#July 2020
+
+#####################################
+
+#Run FASTQC locally
+
+~/Desktop/software/FastQC/fastqc [file 1] [file2] [etc.]
+
+
+#####################################
+
+#Trimmomatic: Trim out adapter sequences
+cp /Users/cbwsbi/Desktop/software/Trimmomatic-0.39/adapters/NexteraPE-PE.fa ./
+
+#!/bin/bash
+for i in $(ls *_001.fastq.gz | rev | cut -c 16- | rev | uniq)
+do
+java -classpath /Users/cbwsbi/Desktop/software/Trimmomatic-0.39/trimmomatic-0.39.jar org.usadellab.trimmomatic.TrimmomaticPE -phred33 -trimlog trim.txt ./${i}R1_001.fastq.gz ./${i}R2_001.fastq.gz ./${i}R1_001-clean.fastq.gz ./${i}R1_001-unpaired.fastq.gz ./${i}R2_001-clean.fastq.gz ./${i}R2_001-unpaired.fastq.gz ILLUMINACLIP:NexteraPE-PE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
+done
+
+#####################################
+
+#Spades de novo assembly
+
+#Make dummy.yaml file
+[
+{
+orientation: "fr",
+type: "paired-end",
+right reads: [ "/Users/cbwsbi/Desktop/SequencingRun021-177534357/XXXR1_001-clean.fastq.gz"
+],
+left reads: [
+"/Users/cbwsbi/Desktop/SequencingRun021-177534357/XXXR2_001-clean.fastq.gz"
+]
+}
+]
+
+#!/bin/bash
+while read i <&3; do
+echo "$(cat dummy.yaml)" | sed "s/XXX/${i}/g" > ${i}yaml.yaml
+/Users/cbwsbi/Desktop/software/SPAdes-3.14.1-Darwin/bin/spades.py -t 4 --isolate --dataset /Users/cbwsbi/Desktop/SequencingRun021-177534357/${i}yaml.yaml -o /Users/cbwsbi/Desktop/SequencingRun021-177534357/${i}assembly 
+done 3<./libraries_1.txt
+
+chmod +x assembly_SPADES.sh
+./assembly_SPADES_subset.sh
+
+
+#####################################
+#Assembly stats
+quast [whole genome fasta]
+#####################################
+
+CARD
+upload fasta files to NCBI and notify CDC AR isolate bank
+
+
+
+
